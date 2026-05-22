@@ -15,15 +15,16 @@ export const useUserStore = create<UserStore>()(
     (set) => ({
       sessionToken: null,
       cachedBookings: [],
+
       setSessionToken: (token) => set({ sessionToken: token }),
       setCachedBookings: (bookings) => set({ cachedBookings: bookings }),
       resetUser: () => set({ sessionToken: null, cachedBookings: [] }),
     }),
     {
       name: 'user-store',
+      // only session token is persisted — cachedBookings excluded
       partialize: (state) => ({
         sessionToken: state.sessionToken,
-        // cachedBookings excluded from persistence intentionally
       }),
     }
   )

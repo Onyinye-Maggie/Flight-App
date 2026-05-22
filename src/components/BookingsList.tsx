@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-
+import { useFlightStore } from '@/store/flightStore'
+const resetBooking = useFlightStore((state) => state.resetBooking)
 const STATUS_STYLES: Record<string, string> = {
   confirmed: 'bg-green-100 text-green-700',
   rescheduled: 'bg-yellow-100 text-yellow-700',
@@ -23,6 +24,7 @@ export default function BookingsList({ bookings }: { bookings: any[] }) {
 
   async function handleCancel(bookingId: string) {
     setLoading(true)
+    resetBooking()
     setError('')
 
     const { data: userData } = await supabase.auth.getUser()

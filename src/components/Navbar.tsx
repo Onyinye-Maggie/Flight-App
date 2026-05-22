@@ -3,13 +3,19 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useFlightStore } from '@/store/flightStore'
+import { useUserStore } from '@/store/userStore'
 
 export default function Navbar({ email }: { email: string }) {
   const router = useRouter()
   const supabase = createClient()
+  const resetBooking = useFlightStore((state) => state.resetBooking)
+  const resetUser = useUserStore((state) => state.resetUser)
 
   async function handleLogout() {
     await supabase.auth.signOut()
+    resetBooking()
+    resetUser()
     router.push('/login')
   }
 

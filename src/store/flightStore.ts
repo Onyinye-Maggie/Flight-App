@@ -14,10 +14,17 @@ interface FlightStore {
   selectedFlight: Flight | null
   selectedSeat: Seat | null
   currentStep: number
+  passengerForm: {
+    fullName: string
+    nationality: string
+    dob: string
+    // passport number is intentionally NOT stored here
+  }
   setSearchQuery: (query: SearchQuery) => void
   setSelectedFlight: (flight: Flight) => void
   setSelectedSeat: (seat: Seat) => void
   setCurrentStep: (step: number) => void
+  setPassengerForm: (form: FlightStore['passengerForm']) => void
   resetBooking: () => void
 }
 
@@ -33,21 +40,35 @@ export const useFlightStore = create<FlightStore>()(
       selectedFlight: null,
       selectedSeat: null,
       currentStep: 1,
+      passengerForm: {
+        fullName: '',
+        nationality: '',
+        dob: '',
+      },
 
       setSearchQuery: (query) => set({ searchQuery: query }),
       setSelectedFlight: (flight) => set({ selectedFlight: flight }),
       setSelectedSeat: (seat) => set({ selectedSeat: seat }),
       setCurrentStep: (step) => set({ currentStep: step }),
+      setPassengerForm: (form) => set({ passengerForm: form }),
       resetBooking: () =>
-        set({ selectedFlight: null, selectedSeat: null, currentStep: 1 }),
+        set({
+          selectedFlight: null,
+          selectedSeat: null,
+          currentStep: 1,
+          passengerForm: { fullName: '', nationality: '', dob: '' },
+        }),
     }),
     {
       name: 'flight-store',
+      // partialize controls what gets saved to localStorage
+      // passport numbers are never stored here — they stay in component state only
       partialize: (state) => ({
         searchQuery: state.searchQuery,
         currentStep: state.currentStep,
         selectedFlight: state.selectedFlight,
-        // selectedSeat is included but passport numbers are never stored here
+        selectedSeat: state.selectedSeat,
+        // passengerForm excluded entirely from localStorage
       }),
     }
   )
