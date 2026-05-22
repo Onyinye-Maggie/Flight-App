@@ -17,19 +17,18 @@ export default function SearchPage() {
   const [error, setError] = useState('')
 
   function handleSearch() {
-    setError('')
-    if (!origin || !destination || !date) {
-      setError('Please fill in all fields.')
-      return
-    }
-    if (origin === destination) {
-      setError('Origin and destination cannot be the same.')
-      return
-    }
-    setSearchQuery({ origin, destination, date, passengers })
-    router.push('/results')
+  setError('')
+  if (!origin || !destination || !date) {
+    setError('Please fill in all fields.')
+    return
   }
-
+  if (origin === destination) {
+    setError('Origin and destination cannot be the same.')
+    return
+  }
+  setSearchQuery({ origin, destination, date, passengers })
+  router.push(`/results?origin=${origin}&destination=${destination}&date=${date}`)
+}
   const today = new Date().toISOString().split('T')[0]
 
   return (
