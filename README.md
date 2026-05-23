@@ -2,17 +2,15 @@
 
 A responsive, production-like flight management web app where passengers can search and book flights, select seats, reschedule, and cancel bookings.
 
-**Live URL:** https://flightmanagementapp.netlify.app/
-
 ---
 
 ## Tech Stack
 
-- **Frontend & API:** Next.js 14+ (App Router)
+- **Frontend & API:** Next.js 15 (App Router)
 - **Database & Auth:** Supabase (PostgreSQL + Auth + Realtime)
 - **State Management:** Zustand with persist middleware
 - **Styling:** Tailwind CSS
-- **PWA:** next-pwa
+- **PWA:** Manifest, offline page, and install prompt implemented
 
 ---
 
@@ -21,8 +19,8 @@ A responsive, production-like flight management web app where passengers can sea
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Onyinye-Maggie/Flight-App
-cd flight-app
+git clone https://github.com/Onyinye-Maggie/Flight-App.git
+cd flight-management-app-web
 ```
 
 ### 2. Install dependencies
@@ -33,9 +31,8 @@ npm install
 
 ### 3. Set up environment variables
 
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
+
 ```bash
 cp .env.example .env.local
 ```
@@ -80,7 +77,6 @@ Password: test123456
 
 ## Supabase Project Config
 
-- **Region:** EU West
 - **Auth:** Email/password (email confirmation disabled for testing)
 - **Realtime:** Enabled on `seats` table
 - **RLS:** Enabled on all tables
@@ -113,7 +109,7 @@ Manages the active booking journey.
 | `currentStep` | ✅ Yes | Tracks booking progress |
 | `passengerForm` | ❌ No | Excluded — contains sensitive data |
 
-**`partialize`** is used to explicitly exclude `passengerForm` from localStorage. Passport numbers are never stored in the Zustand store at all — they live only in local component state during form entry and are sent directly to the Supabase RPC.
+`partialize` is used to explicitly exclude `passengerForm` from localStorage. Passport numbers are never stored in the Zustand store at all — they live only in local component state during form entry and are sent directly to the Supabase RPC.
 
 ### `useUserStore` (persisted)
 
@@ -124,7 +120,7 @@ Manages auth session and cached bookings.
 | `sessionToken` | ✅ Yes | Only the session token is persisted |
 | `cachedBookings` | ❌ No | Excluded — fetched fresh each time |
 
-Both stores expose a `reset` action that is triggered on logout and on booking cancellation.
+Both stores expose a `reset` action triggered on logout and on booking cancellation.
 
 ---
 
@@ -134,13 +130,20 @@ Both stores expose a `reset` action that is triggered on logout and on booking c
 - **Realtime seat map** — seats booked by other users update live via Supabase Realtime
 - **2-hour cancellation rule** — enforced at DB level via a trigger on the `bookings` table
 - **Atomic cancellation** — cancels booking and frees seat in a single RPC call
-- **PWA** — installable, offline fallback page, StaleWhileRevalidate for flight data
+- **PWA** — manifest, offline fallback page, and install prompt implemented
 
 ---
 
 ## Trade-offs & What I Would Do Differently
 
-- **Reschedule UI** — The reschedule flow currently directs users to search for a new flight manually. Given more time, I would build a dedicated reschedule modal that fetches alternative flights on the same route and inserts into the `reschedules` table automatically.
+- **Deployment** — Encountered a Turbopack/webpack conflict between Next.js 15 and Vercel's build system during deployment. The app runs fully in local development. Given more time I would resolve this by migrating webpack-dependent packages to Turbopack-compatible alternatives or pinning to a stable Next.js version.
+
+- **Reschedule UI** — The reschedule flow currently directs users to search for a new flight manually. Given more time I would build a dedicated reschedule modal that fetches alternative flights on the same route and inserts into the `reschedules` table automatically.
+
 - **Passenger count** — The current flow supports one passenger per booking. With more time I would loop the booking form for multiple passengers and link them all to one booking.
-- **Error boundaries** — I would add React error boundaries around key sections for more graceful error handling.
-- **Testing** — I would add unit tests for the Zustand stores and integration tests for the booking flow.
+
+- **Error boundaries** — I would add React error boundaries around key sections for more graceful error handling in production.
+
+- **Testing** — I would add unit tests for the Zustand stores and integration tests for the booking flow using Playwright or Cypress.
+
+- **PWA service worker** — next-pwa conflicted with Next.js 15 Turbopack during deployment. The manifest, offline page, and install prompt are fully implemented. The service worker caching layer was removed to unblock the build.
