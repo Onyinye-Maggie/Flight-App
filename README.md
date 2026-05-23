@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ✈ FlightApp — Flight Management PWA
 
-## Getting Started
+A responsive, production-like flight management web app where passengers can search and book flights, select seats, reschedule, and cancel bookings.
 
-First, run the development server:
+**Live URL:** https://flightmanagementapp.netlify.app/
+
+---
+
+## Tech Stack
+
+- **Frontend & API:** Next.js 14+ (App Router)
+- **Database & Auth:** Supabase (PostgreSQL + Auth + Realtime)
+- **State Management:** Zustand with persist middleware
+- **Styling:** Tailwind CSS
+- **PWA:** next-pwa
+
+---
+
+## Local Setup
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Onyinye-Maggie/Flight-App
+cd flight-app
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Set up environment variables
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```bash
+cp .env.example .env.local
+```
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+### 4. Set up Supabase
+
+- Create a project at [supabase.com](https://supabase.com)
+- Go to **SQL Editor** and run the migration files in order:
+  1. `supabase/migrations/001_create_tables.sql`
+  2. `supabase/migrations/002_rls_policies.sql`
+  3. `supabase/migrations/003_functions.sql`
+  4. `supabase/migrations/004_seed.sql`
+- Go to **Authentication → Providers → Email** and disable **Confirm email** for testing
+- Go to **Database → Publications → supabase_realtime** and enable the `seats` table
+
+### 5. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Test Account
 
-## Learn More
+Use these credentials to log in and test the app:
 
-To learn more about Next.js, take a look at the following resources:
+```
+Email:    test@flightapp.com
+Password: test123456
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Supabase Project Config
 
-## Deploy on Vercel
+- **Region:** EU West
+- **Auth:** Email/password (email confirmation disabled for testing)
+- **Realtime:** Enabled on `seats` table
+- **RLS:** Enabled on all tables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Database Schema
+
+| Table | Description |
+|-------|-------------|
+| `flights` | Flight details, routes, pricing |
+| `seats` | Seat map per flight with class and availability |
+| `bookings` | User bookings with PNR codes |
+| `passengers` | Passenger details per booking |
+| `reschedules` | Reschedule history per booking |
+
+---
+
+## Zustand Store Structure
+
+### `useFlightStore` (persisted)
+
+Manages the active booking journey.
+
+| Field | Persisted | Notes |
+|-------|-----------|-------|
+| `searchQuery` | ✅ Yes | Saved so users can resume after closing tab |
+| `selectedFlight` | ✅ Yes | Saved for in-progress booking |
+| `selectedSeat` | ✅ Yes | Saved for in-progress booking |
+| `currentStep` | ✅ Yes | Tracks booking progress |
+| `passengerForm` | ❌ No | Excluded — contains sensitive data |
+
+**`partialize`** is used to explicitly exclude `passengerForm` from localStorage. Passport numbers are never stored in the Zustand store at all — they live only in local component state during form entry and are sent directly to the Supabase RPC.
+
+### `useUserStore` (persisted)
+
+Manages auth session and cached bookings.
+
+| Field | Persisted | Notes |
+|-------|-----------|-------|
+| `sessionToken` | ✅ Yes | Only the session token is persisted |
+| `cachedBookings` | ❌ No | Excluded — fetched fresh each time |
+
+Both stores expose a `reset` action that is triggered on logout and on booking cancellation.
+
+---
+
+## Key Features
+
+- **Seat locking RPC** — prevents double-booking race conditions using `FOR UPDATE` row locking
+- **Realtime seat map** — seats booked by other users update live via Supabase Realtime
+- **2-hour cancellation rule** — enforced at DB level via a trigger on the `bookings` table
+- **Atomic cancellation** — cancels booking and frees seat in a single RPC call
+- **PWA** — installable, offline fallback page, StaleWhileRevalidate for flight data
+
+---
+
+## Trade-offs & What I Would Do Differently
+
+- **Reschedule UI** — The reschedule flow currently directs users to search for a new flight manually. Given more time, I would build a dedicated reschedule modal that fetches alternative flights on the same route and inserts into the `reschedules` table automatically.
+- **Passenger count** — The current flow supports one passenger per booking. With more time I would loop the booking form for multiple passengers and link them all to one booking.
+- **Error boundaries** — I would add React error boundaries around key sections for more graceful error handling.
+- **Testing** — I would add unit tests for the Zustand stores and integration tests for the booking flow.
